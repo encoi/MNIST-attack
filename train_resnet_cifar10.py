@@ -15,7 +15,7 @@ from models.resnet import resnet18
 
 def parse_opt():
     parser = argparse.ArgumentParser(description='ResNet-CIFAR10')
-    parser.add_argument('--epochs', type=int, default=50, help='训练总轮数')
+    parser.add_argument('--epochs', type=int, default=100, help='训练总轮数')
     parser.add_argument('--batch_size', type=int, default=128, help='批量大小')
     parser.add_argument('--lr', type=float, default=0.01, help='学习率')
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='权重衰减')
@@ -201,26 +201,35 @@ if __name__ == "__main__":
     dataframe.to_csv(os.path.join(args.model_dir, "training_history.csv"), index=False)
     
     # 绘制损失和准确率曲线
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(16, 6))  # 进一步增加宽度
+    
+    # 设置matplotlib使用英文字体
+    plt.rcParams['font.sans-serif'] = ['Arial']
+    plt.rcParams['axes.unicode_minus'] = False
     
     plt.subplot(1, 2, 1)
-    plt.plot(epochs, train_losses, 'b-', label='训练损失')
-    plt.plot(epochs, test_losses, 'r-', label='测试损失')
-    plt.title('训练和测试损失')
-    plt.xlabel('轮次')
-    plt.ylabel('损失')
-    plt.legend()
+    plt.plot(epochs, train_losses, 'b-', label='Training Loss')
+    plt.plot(epochs, test_losses, 'r-', label='Validation Loss')
+    plt.title('Training and Validation Loss', fontsize=14)
+    plt.xlabel('Epochs', fontsize=12)
+    plt.ylabel('Loss', fontsize=12)
+    plt.legend(fontsize=12, loc='upper right')
+    plt.grid(True, linestyle='--', alpha=0.7)
     
     plt.subplot(1, 2, 2)
-    plt.plot(epochs, train_accs, 'b-', label='训练准确率')
-    plt.plot(epochs, test_accs, 'r-', label='测试准确率')
-    plt.title('训练和测试准确率')
-    plt.xlabel('轮次')
-    plt.ylabel('准确率 (%)')
-    plt.legend()
+    plt.plot(epochs, train_accs, 'b-', label='Training Accuracy')
+    plt.plot(epochs, test_accs, 'r-', label='Validation Accuracy') 
+    plt.title('Training and Validation Accuracy', fontsize=14)
+    plt.xlabel('Epochs', fontsize=12)
+    plt.ylabel('Accuracy (%)', fontsize=12)
+    plt.legend(fontsize=12, loc='lower right')
+    plt.grid(True, linestyle='--', alpha=0.7)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(args.model_dir, 'training_curves.png'))
-    plt.show()
+    plt.savefig(os.path.join(args.model_dir, 'training_curves.png'), 
+               dpi=300, 
+               bbox_inches='tight',
+               facecolor='white')  # 添加白色背景
+    plt.close()  # 明确关闭图形
     
     print(f"训练完成! 最佳测试准确率: {best_acc[0]:.2f}%")

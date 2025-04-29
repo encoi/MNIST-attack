@@ -85,7 +85,7 @@ class ResNet(nn.Module):
         self.in_channels = 64
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, padding=1, bias=False),  # 修改输入通道为1
+            nn.Conv2d(3, 64, kernel_size=3, padding=1, bias=False),  # 输入通道已经是3
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True))
         #we use a different inputsize than the original paper

@@ -81,16 +81,16 @@ def test_with_attack(model, device, test_loader, epsilon):
     
     # 记录到日志文件
     logging.info("-----------------------------------------------------")
-    logging.info(f"扰动强度 epsilon = {epsilon:.3f}")
-    logging.info(f"真实样本识别准确率: {correct_clean}/{total} ({clean_acc:.2f}%)")
-    logging.info(f"对抗样本识别准确率: {correct_adv}/{total} ({adv_acc:.2f}%)")
+    logging.info(f"Perturbation strength epsilon = {epsilon:.3f}")
+    logging.info(f"Clean samples accuracy: {correct_clean}/{total} ({clean_acc:.2f}%)")
+    logging.info(f"Adversarial samples accuracy: {correct_adv}/{total} ({adv_acc:.2f}%)")
     logging.info("-----------------------------------------------------")
     
     print("-----------------------------------------------------")
-    print("对抗攻击测试结果:")
-    print(f"扰动强度 epsilon = {epsilon:.3f}")
-    print(f"真实样本识别准确率: {correct_clean}/{total} ({clean_acc:.2f}%)")
-    print(f"对抗样本识别准确率: {correct_adv}/{total} ({adv_acc:.2f}%)")
+    print("Adversarial Attack Test Results:")
+    print(f"Perturbation strength epsilon = {epsilon:.3f}")
+    print(f"Clean samples accuracy: {correct_clean}/{total} ({clean_acc:.2f}%)")
+    print(f"Adversarial samples accuracy: {correct_adv}/{total} ({adv_acc:.2f}%)")
     print("-----------------------------------------------------")
     
     return clean_acc, adv_acc
@@ -102,22 +102,24 @@ def visualize_adversarial_examples(model, device, test_loader, epsilon, num_exam
     loss_fn = nn.CrossEntropyLoss()
     model.eval()
     examples = []
-    classes = ['飞机', '汽车', '鸟', '猫', '鹿', '狗', '青蛙', '马', '船', '卡车']
+    classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     
     # 取若干个样本进行展示
     for data, target in test_loader:
-        data, target = data.to(device), target.to(device)
+        # 只取批次中的第一个样本
+        data_sample = data[0:1].to(device)  # 保持维度 [1, C, H, W]
+        target_sample = target[0:1].to(device)  # 保持维度 [1]
         
         # 干净样本预测
-        output = model(data)
+        output = model(data_sample)
         pred_clean = output.max(1, keepdim=True)[1]
         
         # 生成对抗样本并预测
-        adv_data = fgsm_attack(model, loss_fn, data, target, epsilon)
+        adv_data = fgsm_attack(model, loss_fn, data_sample, target_sample, epsilon)
         output_adv = model(adv_data)
         pred_adv = output_adv.max(1, keepdim=True)[1]
         
-        examples.append((data, adv_data, target, pred_clean, pred_adv))
+        examples.append((data_sample, adv_data, target_sample, pred_clean, pred_adv))
         if len(examples) >= num_examples:
             break
     
@@ -143,12 +145,14 @@ def visualize_adversarial_examples(model, device, test_loader, epsilon, num_exam
         plt.figure(figsize=(8, 4))
         
         plt.subplot(1, 2, 1)
-        plt.title(f"真实样本\n真实标签: {classes[target.item()]} 预测: {classes[pred_clean.item()]} (ε={epsilon:.2f})")
+        plt.title(f"Original Sample\nTrue: {classes[target.item()]} Pred: {classes[pred_clean.item()]} (ε={epsilon:.2f})", 
+              fontsize=12)
         plt.imshow(orig_img)
         plt.axis("off")
         
         plt.subplot(1, 2, 2)
-        plt.title(f"对抗样本\n真实标签: {classes[target.item()]} 预测: {classes[pred_adv.item()]} (ε={epsilon:.2f})")
+        plt.title(f"Adversarial Sample\nTrue: {classes[target.item()]} Pred: {classes[pred_adv.item()]} (ε={epsilon:.2f})", 
+              fontsize=12)
         plt.imshow(adv_img)
         plt.axis("off")
         
@@ -166,12 +170,13 @@ def plot_accuracy_vs_epsilon(model, device, test_loader, epsilons):
         clean_accs.append(clean_acc)
         adv_accs.append(adv_acc)
     
+    # 在plot_accuracy_vs_epsilon函数中
     plt.figure(figsize=(10, 6))
-    plt.plot(epsilons, clean_accs, 'b-', label='干净样本准确率', marker='o')
-    plt.plot(epsilons, adv_accs, 'r--', label='对抗样本准确率', marker='s')
-    plt.title("识别准确率 vs 扰动强度")
-    plt.xlabel("扰动强度 (epsilon)")
-    plt.ylabel("准确率 (%)")
+    plt.plot(epsilons, clean_accs, 'b-', label='Clean Samples', marker='o')
+    plt.plot(epsilons, adv_accs, 'r--', label='Adversarial Samples', marker='s')
+    plt.title("Accuracy vs Perturbation Strength", fontsize=14)
+    plt.xlabel("Perturbation Strength (epsilon)")
+    plt.ylabel("Accuracy (%)")
     plt.ylim(0, 100)
     plt.legend()
     plt.grid(True)
